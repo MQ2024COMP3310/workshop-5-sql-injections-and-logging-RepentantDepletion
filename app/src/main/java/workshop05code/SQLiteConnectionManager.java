@@ -145,10 +145,12 @@ public class SQLiteConnectionManager {
      * @return true if guess exists in the database, false otherwise
      */
     public boolean isValidWord(String guess) {
+        String category = "1";
         String sql = "SELECT count(id) as total FROM validWords WHERE word like'" + guess + "';";
 
         try (Connection conn = DriverManager.getConnection(databaseURL);
                 PreparedStatement stmt = conn.prepareStatement(sql)) {
+                    stmt.setString(1, category);
 
             ResultSet resultRows = stmt.executeQuery();
             if (resultRows.next()) {
