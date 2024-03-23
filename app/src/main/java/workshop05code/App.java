@@ -6,10 +6,12 @@ import java.io.IOException;
 import java.util.NoSuchElementException;
 import java.util.Scanner;
 //Included for the logging exercise
+import java.util.logging.FileHandler;
 import java.io.FileInputStream;
 import java.util.logging.Level;
 import java.util.logging.LogManager;
 import java.util.logging.Logger;
+import java.util.logging.SimpleFormatter;
 
 /**
  *
@@ -28,6 +30,7 @@ public class App {
     }
 
     private static final Logger logger = Logger.getLogger(App.class.getName());
+
     // End code for logging exercise
     
     /**
@@ -54,18 +57,19 @@ public class App {
 
         try (BufferedReader br = new BufferedReader(new FileReader("resources/data.txt"))) {
             String line;
-            int i = 1;
             while ((line = br.readLine()) != null) {
-                System.out.println(line);
-                wordleDatabaseConnection.addValidWord(i, line);
-                i++;
+            if (wordleDatabaseConnection.isValidInput(line)) {
+                // Log valid words at CONFIG level
+                logger.config("Valid word read from file: " + line);
+                wordleDatabaseConnection.addValidWord(0, line);
+            } else {
+                // Log invalid words at SEVERE level
+                logger.severe("Invalid word read from file: " + line);
             }
-
-        } catch (IOException e) {
-            System.out.println("Not able to load . Sorry!");
-            System.out.println(e.getMessage());
-            return;
         }
+    } catch (IOException e) {
+        logger.log(Level.SEVERE, "Failed to load data.txt", e);
+    }
 
         // let's get them to enter a word
 
@@ -78,18 +82,20 @@ public class App {
                     System.out.println("You've guessed '" + guess + "'.");
                     if (wordleDatabaseConnection.isValidWord(guess)) {
                         System.out.println("Success! It is in the list.\n");
+                        logger.log(Level.INFO, "Correct Input");
                     } else {
                         System.out.println("Sorry. This word is NOT in the list.\n");
                     }
                 } else {
                     System.out.println("Invalid input. Please enter a 4-letter word consisting only of lowercase letters a-z.");
+                    logger.log(Level.INFO, "Invalid guess");
                 }
 
                 System.out.print("Enter a 4 letter word for a guess or q to quit: ");
                 guess = scanner.nextLine();
             }
         } catch (NoSuchElementException | IllegalStateException e) {
-            e.printStackTrace();
+            logger.log(Level.WARNING, "An error occurred during input", e);
         }
 
     }

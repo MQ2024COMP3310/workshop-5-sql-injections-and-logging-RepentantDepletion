@@ -15,6 +15,7 @@ import java.io.IOException;
 import java.util.logging.Level;
 import java.util.logging.LogManager;
 import java.util.logging.Logger;
+import java.util.UUID;
 
 public class SQLiteConnectionManager {
     //Start code logging exercise
@@ -127,20 +128,23 @@ public class SQLiteConnectionManager {
      */
     public void addValidWord(int id, String word) {
         if (isValidInput(word)) {
+            int highestId = findHighestId();
+            int newId = highestId + 1;
+    
             String sql = "INSERT INTO validWords(id, word) VALUES (?, ?)";
     
             try (Connection conn = DriverManager.getConnection(databaseURL);
                  PreparedStatement pstmt = conn.prepareStatement(sql)) {
-                
-                pstmt.setInt(1, id);
+    
+                pstmt.setInt(1, newId);
                 pstmt.setString(2, word);
     
                 pstmt.executeUpdate();
             } catch (SQLException e) {
-                System.out.println(e.getMessage());
+                logger.log(Level.SEVERE, "Failed to add valid word", e);
             }
         } else {
-            System.out.println("Ignoring unacceptable input: " + word);
+            logger.log(Level.WARNING, "Ignoring unacceptable input: " + word);
         }
     }
     
@@ -175,5 +179,23 @@ public class SQLiteConnectionManager {
     
     public boolean isValidInput(String input) {
         return input.matches("[a-z]{4}");
+    }
+
+    private int findHighestId() {
+        String sql = "SELECT MAX(id) AS max_id FROM validWords";
+    
+        try (Connection conn = DriverManager.getConnection(databaseURL);
+             Statement stmt = conn.createStatement();
+             ResultSet rs = stmt.executeQuery(sql)) {
+    
+            if (rs.next()) {
+                return rs.getInt("max_id");
+            }
+        } catch (SQLException e) {
+            logger.log(Level.SEVERE, "Failed to retrieve highest id", e);
+        }
+    
+        // If there are no existing records, return 0 as the highest id
+        return 0;
     }
 }
